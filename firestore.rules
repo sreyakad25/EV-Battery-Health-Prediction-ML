@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Users collection (Profile photo, full name, email, account settings):
+    // Allows reading and updating profile documents across Web and Mobile app
+    match /users/{userId} {
+      allow read, write: if true;
+
+      // 2. Predictions subcollection: ONE SHARED SOURCE OF TRUTH
+      // users/{userId}/predictions/{predictionId}
+      match /predictions/{predictionId} {
+        allow read, write, delete: if true;
+      }
+    }
+
+    // 3. Legacy root predictions collection (backward compatibility):
+    match /predictions/{predId} {
+      allow read, write, delete: if true;
+    }
+  }
+}
